@@ -9,6 +9,7 @@ import scrapy
 
 
 class OnpeCrawlerItem(scrapy.Item):
+    content_results = scrapy.Field()
     country = scrapy.Field()
     department = scrapy.Field()
     province = scrapy.Field()
@@ -23,6 +24,7 @@ class OnpeCrawlerItem(scrapy.Item):
     voters = scrapy.Field()
     acta_status = scrapy.Field()
     acta_image = scrapy.Field()
+    acta_image_url = scrapy.Field()
     resolutions = scrapy.Field()  # Lista de resoluciones
     resolutions_note = scrapy.Field()  # : El valor consignado en el acta presenta ilegibilidad
     votes_ppk = scrapy.Field()
