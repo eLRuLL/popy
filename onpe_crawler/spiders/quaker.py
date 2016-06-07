@@ -1,5 +1,6 @@
 import json
 from urllib import urlretrieve
+from w3lib.html import remove_tags
 
 import scrapy
 from scrapy.http import FormRequest, Request
@@ -19,10 +20,11 @@ class QuakerSpider(scrapy.Spider):
                       callback=self.get_mesas)
 
     def get_mesas(self, response):
-        with open("ubigeos.json", "r") as handle:
-            ubigeos = json.loads(handle.read())
+        with open("mesas.jl", "r") as handle:
+            ubigeos = [json.loads(i) for i in handle.readlines()]
         for i in ubigeos:
-            ubigeo = i['pk']
+            ubigeo = i['mesa']
+            local_code = i['local_code']
             yield FormRequest(url=self.base_url,
                            headers={'X-Requested-With': 'XMLHttpRequest'},
                            formdata={
@@ -30,7 +32,7 @@ class QuakerSpider(scrapy.Spider):
                                '_accion': 'displayActas',
                                'tipoElec': '10',
                                'ubigeo': ubigeo,
-                               'actasPor': '3907',
+                               'actasPor': local_code,
                                'ubigeoLocal': ubigeo,
                                'page': 'undefined',
                            },
@@ -66,7 +68,8 @@ class QuakerSpider(scrapy.Spider):
             f.write(response.body)
 
         item = OnpeCrawlerItem()
-        ubigeo = response.xpath("//table[@class='table14']//tr[2]//td/text()").extract()
+        ubigeo = response.xpath("//table[@class='table14']//tr[2]//td").extract()
+        ubigeo = [remove_tags(i) for i in ubigeo]
         item['content_results'] = response.xpath("//div[@class='contenido-resultados']").extract_first()
         item['department'] = ubigeo[0]
         item['province'] = ubigeo[1]
