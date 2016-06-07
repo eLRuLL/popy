@@ -67,6 +67,7 @@ class QuakerSpider(scrapy.Spider):
 
         item = OnpeCrawlerItem()
         ubigeo = response.xpath("//table[@class='table14']//tr[2]//td/text()").extract()
+        item['content_results'] = response.xpath("//div[@class='contenido-resultados']").extract_first()
         item['department'] = ubigeo[0]
         item['province'] = ubigeo[1]
         item['district'] = ubigeo[2]
