@@ -21,6 +21,8 @@ USER_AGENT = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.11; rv:46.0) Gecko/20100
 # Obey robots.txt rules
 # ROBOTSTXT_OBEY = True
 
+DOWNLOAD_TIMEOUT = 900
+
 # Configure maximum concurrent requests performed by Scrapy (default: 16)
 #CONCURRENT_REQUESTS = 32
 

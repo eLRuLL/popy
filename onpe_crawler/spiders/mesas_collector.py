@@ -1,5 +1,6 @@
 from scrapy import Spider, Request
 from urllib import urlencode
+from copy import deepcopy
 
 
 class MesasCollectorSpider(Spider):
@@ -44,7 +45,7 @@ class MesasCollectorSpider(Spider):
     def parse_departament(self, response):
         self.logger.info('parse_department')
         for code in response.xpath('//option[not(@selected)]'):
-            item = response.meta['item']
+            item = deepcopy(response.meta['item'])
             item.update(
                 department_code=code.xpath('./@value').extract_first(),
                 department_name=code.xpath('./text()').extract_first(),
@@ -68,7 +69,7 @@ class MesasCollectorSpider(Spider):
     def parse_province(self, response):
         self.logger.info('parse_province')
         for code in response.xpath('//option[not(@selected)]'):
-            item = response.meta['item']
+            item = deepcopy(response.meta['item'])
             item.update(
                 province_code=code.xpath('./@value').extract_first(),
                 province_name=code.xpath('./text()').extract_first(),
@@ -92,7 +93,7 @@ class MesasCollectorSpider(Spider):
     def parse_district(self, response):
         self.logger.info('parse_district')
         for code in response.xpath('//option[not(@selected)]'):
-            item = response.meta['item']
+            item = deepcopy(response.meta['item'])
             item.update(
                 district_code=code.xpath('./@value').extract_first(),
                 district_name=code.xpath('./text()').extract_first(),
@@ -115,7 +116,7 @@ class MesasCollectorSpider(Spider):
         self.logger.info('parse_local')
         for code in response.xpath('//option[not(@selected)]'):
             actas_por, ubigeo = code.xpath('./@value').extract_first().split('?')
-            item = response.meta['item']
+            item = deepcopy(response.meta['item'])
             item.update(
                 local_code=actas_por,
                 local_name=code.xpath('./text()').extract_first(),
@@ -140,6 +141,6 @@ class MesasCollectorSpider(Spider):
     def parse_mesas(self, response):
         self.logger.info('parse_mesas')
         for mesa in response.xpath('(//table)[1]//td//a/text()').extract():
-            item = response.meta['item']
+            item = deepcopy(response.meta['item'])
             item['mesa'] = mesa
             yield item
