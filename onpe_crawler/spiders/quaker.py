@@ -17,6 +17,11 @@ def read_from_file():
     return [json.loads(i) for i in res.content.splitlines()]
 
 
+def read_from_file_test():
+    with open("mesas_test.jl", "r") as handle:
+        return [json.loads(i) for i in handle.readlines()]
+
+
 class QuakerSpider(scrapy.Spider):
     name = "quaker"
     allowed_domains = ["onpe.gob.pe"]
@@ -31,63 +36,33 @@ class QuakerSpider(scrapy.Spider):
 
     def get_mesas(self, response):
         for i in self.all_ubigeos:
-            ubigeo = i['mesa']
-            local_code = i['local_code']
             yield FormRequest(url=self.base_url,
                            headers={'X-Requested-With': 'XMLHttpRequest'},
                            formdata={
-                               '_clase': 'actas',
-                               '_accion': 'displayActas',
+                               '_clase': 'mesas',
+                               '_accion': 'displayMesas',
+                               'ubigeo': i['district_code'],
+                               'nroMesa': i['mesa'],
                                'tipoElec': '10',
-                               'ubigeo': ubigeo,
-                               'actasPor': local_code,
-                               'ubigeoLocal': ubigeo,
-                               'page': 'undefined',
+                               'page': '1',
+                               'pornumero': '1',
                            },
-                           meta={'ubigeo': ubigeo,
-                                 'department': i['department_name'],
-                                 'province': i['province_name'],
-                                 'district': i['district_name']},
+                           meta={'mesa_metadata': i},
                            callback=self.parse)
 
     def parse(self, response):
-        ubigeo = response.meta['ubigeo']
-
-        filename = "ubigeo_" + ubigeo + '.html'
+        meta = response.meta['mesa_metadata']
+        filename = "mesa_" + meta['mesa'] + '.html'
         with open(filename, 'wb') as f:
             f.write(response.body)
 
-        tables = response.xpath('//td/a/text()').extract()
-        for table in tables:
-            meta = response.meta
-            meta['mesa'] = table
-            yield FormRequest(url=self.base_url,
-                            headers={'X-Requested-With': 'XMLHttpRequest'},
-                            formdata={
-                                '_clase': 'mesas',
-                                '_accion':'displayMesas',
-                                'ubigeo': ubigeo,
-                                'nroMesa': table,
-                                'tipoElec': '10',
-                                'page': '1',
-                                'pornumero': '1',
-                            },
-                            meta=meta,
-                            callback=self.parse_mesa)
-
-    def parse_mesa(self, response):
-        filename = "mesa_" + response.meta['mesa'] + '.html'
-        with open(filename, 'wb') as f:
-            f.write(response.body)
-
-        meta = response.meta
         item = OnpeCrawlerItem()
         ubigeo = response.xpath("//table[@class='table14']//tr[2]//td").extract()
         ubigeo = [remove_tags(i) for i in ubigeo]
         item['content_results'] = response.xpath("//div[@class='contenido-resultados']").extract_first()
-        item['department'] = meta['department']
-        item['province'] = meta['province']
-        item['district'] = meta['district']
+        item['department'] = meta['department_name']
+        item['province'] = meta['province_name']
+        item['district'] = meta['district_name']
         item['local'] = ubigeo[3]
         item['address'] = ubigeo[4]
 
