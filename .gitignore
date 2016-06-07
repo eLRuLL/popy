@@ -113,3 +113,4 @@ docs/_build/
 # PyBuilder
 target/
 
+*.pyc
