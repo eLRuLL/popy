@@ -1,3 +1,4 @@
+import json
 from urllib import urlretrieve
 
 import scrapy
@@ -18,8 +19,11 @@ class QuakerSpider(scrapy.Spider):
                       callback=self.get_mesas)
 
     def get_mesas(self, response):
-        ubigeo = '150301'
-        return [FormRequest(url=self.base_url,
+        with open("ubigeos.json", "r") as handle:
+            ubigeos = json.loads(handle.read())
+        for i in ubigeos:
+            ubigeo = i['pk']
+            yield FormRequest(url=self.base_url,
                            headers={'X-Requested-With': 'XMLHttpRequest'},
                            formdata={
                                '_clase': 'actas',
@@ -31,7 +35,7 @@ class QuakerSpider(scrapy.Spider):
                                'page': 'undefined',
                            },
                            meta={'ubigeo': ubigeo},
-                           callback=self.parse)]
+                           callback=self.parse)
 
     def parse(self, response):
         ubigeo = response.meta['ubigeo']
