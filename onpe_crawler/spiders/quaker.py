@@ -8,11 +8,17 @@ from scrapy.http import FormRequest, Request
 from onpe_crawler.items import OnpeCrawlerItem
 
 
+def read_from_file():
+    with open("mesas.jl", "r") as handle:
+        return [json.loads(i) for i in handle.readlines()]
+
+
 class QuakerSpider(scrapy.Spider):
     name = "quaker"
     allowed_domains = ["onpe.gob.pe"]
     base_url = 'https://resultadoselecciones2016.onpe.gob.pe/PRP2V2016/ajax.php'
     start_url = 'https://resultadoselecciones2016.onpe.gob.pe/PRP2V2016/'
+    all_ubigeos = read_from_file()
 
     def start_requests(self):
         yield Request(url=self.start_url,
@@ -20,9 +26,7 @@ class QuakerSpider(scrapy.Spider):
                       callback=self.get_mesas)
 
     def get_mesas(self, response):
-        with open("mesas.jl", "r") as handle:
-            ubigeos = [json.loads(i) for i in handle.readlines()]
-        for i in ubigeos:
+        for i in self.all_ubigeos:
             ubigeo = i['mesa']
             local_code = i['local_code']
             yield FormRequest(url=self.base_url,
@@ -96,6 +100,6 @@ class QuakerSpider(scrapy.Spider):
         item['copy_number'] = response.xpath('//table[@class="table13"]//td/text()').extract()[1].strip()
         href = response.xpath('//a/@href').extract_first()
         item['acta_image_url'] = "{}/{}".format(self.start_url, href)
-        filename = "acta_mesa_" + item['table_number'] + '.pdf'
-        urlretrieve(item['acta_image_url'], filename)
+        # filename = "acta_mesa_" + item['table_number'] + '.pdf'
+        # urlretrieve(item['acta_image_url'], filename)
         return item
