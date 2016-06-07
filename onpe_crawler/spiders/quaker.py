@@ -1,7 +1,8 @@
 import json
-from urllib import urlretrieve
-from w3lib.html import remove_tags
+# from urllib import urlretrieve
 
+import requests
+from w3lib.html import remove_tags
 import scrapy
 from scrapy.http import FormRequest, Request
 
@@ -9,8 +10,11 @@ from onpe_crawler.items import OnpeCrawlerItem
 
 
 def read_from_file():
-    with open("mesas.jl", "r") as handle:
-        return [json.loads(i) for i in handle.readlines()]
+    mesas_url = "https://www.dropbox.com/s/67p9z03r9i6bj0v/mesas.jl?dl=1"
+    res = requests.get(mesas_url)
+    if res.status_code != 200:
+        raise IOError("Mesas file in Dropbox cannot be read")
+    return [json.loads(i) for i in res.content.splitlines()]
 
 
 class QuakerSpider(scrapy.Spider):
