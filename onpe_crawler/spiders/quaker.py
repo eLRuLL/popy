@@ -11,9 +11,9 @@ class QuakerSpider(scrapy.Spider):
     def start_requests(self):
         yield Request(url=self.start_url,
                       headers={'X-Requested-With': 'XMLHttpRequest'},
-                      callback=self.get_actas)
+                      callback=self.get_mesas)
 
-    def get_actas(self, response):
+    def get_mesas(self, response):
         ubigeo = '150301'
         return [FormRequest(url=self.base_url,
                            headers={'X-Requested-With': 'XMLHttpRequest'},
@@ -30,25 +30,28 @@ class QuakerSpider(scrapy.Spider):
                            callback=self.parse)]
 
     def parse(self, response):
-        filename = "ubigeo_" + response.meta['ubigeo'] + '.html'
+        ubigeo = response.meta['ubigeo']
+
+        filename = "ubigeo_" + ubigeo + '.html'
         with open(filename, 'wb') as f:
             f.write(response.body)
 
-        ubigeo = "040129"
-        mesa = '007246'
-        return [FormRequest(url=self.base_url,
+        # mesas
+        tables = response.xpath('//td/a/text()').extract()
+        for table in tables:
+            yield FormRequest(url=self.base_url,
                             headers={'X-Requested-With': 'XMLHttpRequest'},
                             formdata={
                                 '_clase': 'mesas',
                                 '_accion':'displayMesas',
                                 'ubigeo': ubigeo,
-                                'nroMesa': mesa,
+                                'nroMesa': table,
                                 'tipoElec': '10',
                                 'page': '1',
                                 'pornumero': '1',
                             },
-                            meta={'mesa': mesa},
-                            callback=self.parse_mesa)]
+                            meta={'mesa': table},
+                            callback=self.parse_mesa)
 
     def parse_mesa(self, response):
         filename = "mesa_" + response.meta['mesa'] + '.html'
