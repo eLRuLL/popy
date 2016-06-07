@@ -44,7 +44,10 @@ class QuakerSpider(scrapy.Spider):
                                'ubigeoLocal': ubigeo,
                                'page': 'undefined',
                            },
-                           meta={'ubigeo': ubigeo},
+                           meta={'ubigeo': ubigeo,
+                                 'department': i['department_name'],
+                                 'province': i['province_name'],
+                                 'district': i['district_name']},
                            callback=self.parse)
 
     def parse(self, response):
@@ -56,6 +59,8 @@ class QuakerSpider(scrapy.Spider):
 
         tables = response.xpath('//td/a/text()').extract()
         for table in tables:
+            meta = response.meta
+            meta['mesa'] = table
             yield FormRequest(url=self.base_url,
                             headers={'X-Requested-With': 'XMLHttpRequest'},
                             formdata={
@@ -67,7 +72,7 @@ class QuakerSpider(scrapy.Spider):
                                 'page': '1',
                                 'pornumero': '1',
                             },
-                            meta={'mesa': table},
+                            meta=meta,
                             callback=self.parse_mesa)
 
     def parse_mesa(self, response):
@@ -75,13 +80,14 @@ class QuakerSpider(scrapy.Spider):
         with open(filename, 'wb') as f:
             f.write(response.body)
 
+        meta = response.meta
         item = OnpeCrawlerItem()
         ubigeo = response.xpath("//table[@class='table14']//tr[2]//td").extract()
         ubigeo = [remove_tags(i) for i in ubigeo]
         item['content_results'] = response.xpath("//div[@class='contenido-resultados']").extract_first()
-        item['department'] = ubigeo[0]
-        item['province'] = ubigeo[1]
-        item['district'] = ubigeo[2]
+        item['department'] = meta['department']
+        item['province'] = meta['province']
+        item['district'] = meta['district']
         item['local'] = ubigeo[3]
         item['address'] = ubigeo[4]
 
