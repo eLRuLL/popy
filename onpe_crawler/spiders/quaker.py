@@ -9,9 +9,8 @@ from scrapy.http import FormRequest, Request
 from onpe_crawler.items import OnpeCrawlerItem
 
 
-def read_from_file():
-    mesas_url = "https://www.dropbox.com/s/67p9z03r9i6bj0v/mesas.jl?dl=1"
-    res = requests.get(mesas_url)
+def read_from_file(mesas_dropbox_url):
+    res = requests.get(mesas_dropbox_url)
     if res.status_code != 200:
         raise IOError("Mesas file in Dropbox cannot be read")
     return [json.loads(i) for i in res.content.splitlines()]
@@ -27,7 +26,12 @@ class QuakerSpider(scrapy.Spider):
     allowed_domains = ["onpe.gob.pe"]
     base_url = 'https://resultadoselecciones2016.onpe.gob.pe/PRP2V2016/ajax.php'
     start_url = 'https://resultadoselecciones2016.onpe.gob.pe/PRP2V2016/'
-    all_ubigeos = read_from_file()
+
+    def __init__(self, mesas_dropbox_url, *args, **kwargs):
+        super(QuakerSpider, self).__init__(*args, **kwargs)
+        if not mesas_dropbox_url:
+            raise Exception("Use dropbox URL as spider argument.")
+        self.all_ubigeos = read_from_file(mesas_dropbox_url)
 
     def start_requests(self):
         yield Request(url=self.start_url,
