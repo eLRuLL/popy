@@ -1,4 +1,5 @@
 from scrapy import Spider, Request
+from scrapy.http import Response
 from urllib import urlencode
 from copy import deepcopy
 
@@ -20,6 +21,14 @@ class MesasCollectorSpider(Spider):
         }
     }
 
+    def parse_error(self, response):
+        if not isinstance(response, Response):
+            response = response.request
+        item = response.meta.get('item', {})
+        item['error'] = response.url
+        item['request_body'] = response.body
+        return item
+
     def start_requests(self):
         for ambito_code, ambito_name in self.ambitos.items():
             body = {
@@ -36,6 +45,7 @@ class MesasCollectorSpider(Spider):
                 url=self.request_url,
                 body=urlencode(body),
                 callback=self.parse_departament,
+                errback=self.parse_error,
                 method='post',
                 meta={
                     'item': {'ambito': ambito_name},
@@ -62,6 +72,7 @@ class MesasCollectorSpider(Spider):
                 url=self.request_url,
                 body=urlencode(body),
                 callback=self.parse_province,
+                errback=self.parse_error,
                 method='post',
                 meta={'item': item},
             )
@@ -86,6 +97,7 @@ class MesasCollectorSpider(Spider):
                 url=self.request_url,
                 body=urlencode(body),
                 callback=self.parse_district,
+                errback=self.parse_error,
                 method='post',
                 meta={'item': item},
             )
@@ -108,6 +120,7 @@ class MesasCollectorSpider(Spider):
                 url=self.request_url,
                 body=urlencode(body),
                 callback=self.parse_local,
+                errback=self.parse_error,
                 method='post',
                 meta={'item': item},
             )
@@ -134,6 +147,7 @@ class MesasCollectorSpider(Spider):
                 url=self.request_url,
                 body=urlencode(body),
                 callback=self.parse_mesas,
+                errback=self.parse_error,
                 method='post',
                 meta={'item': item},
             )
