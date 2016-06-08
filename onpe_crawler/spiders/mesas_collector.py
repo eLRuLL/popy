@@ -11,7 +11,7 @@ class MesasCollectorSpider(Spider):
 
     ambitos = {
         'P': 'Peru',
-        'E': 'Extrajero',
+        'E': 'Extranjero',
     }
 
     custom_settings = {

@@ -26,11 +26,11 @@ class FieldsPipeline(object):
             if field == 'ambito':
                 spider.crawler.stats.inc_value(value)
             elif field == 'department_name':
-                spider.crawler.stats.inc_value('{}/{}'.format(item['ambito'], value))
+                spider.crawler.stats.inc_value(u'{}/{}'.format(item['ambito'], value))
             elif field == 'province_name':
-                spider.crawler.stats.inc_value('{}/{}/{}'.format(item['ambito'], item['department_name'], value))
+                spider.crawler.stats.inc_value(u'{}/{}/{}'.format(item['ambito'], item['department_name'], value))
             elif field == 'district_name':
-                spider.crawler.stats.inc_value('{}/{}/{}/{}'.format(item['ambito'], item['department_name'], item['province_name'], value))
+                spider.crawler.stats.inc_value(u'{}/{}/{}/{}'.format(item['ambito'], item['department_name'], item['province_name'], value))
             elif field == 'local_name':
-                spider.crawler.stats.inc_value('{}/{}/{}/{}/{}'.format(item['ambito'], item['department_name'], item['province_name'], item['district_name'], value))
+                spider.crawler.stats.inc_value(u'{}/{}/{}/{}/{}'.format(item['ambito'], item['department_name'], item['province_name'], item['district_name'], value))
         return item
