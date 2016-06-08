@@ -1,11 +1,24 @@
 import json
-from urllib import urlretrieve
-from w3lib.html import remove_tags
+# from urllib import urlretrieve
 
+import requests
+from w3lib.html import remove_tags
 import scrapy
 from scrapy.http import FormRequest, Request
 
 from onpe_crawler.items import OnpeCrawlerItem
+
+
+def read_from_file(mesas_dropbox_url):
+    res = requests.get(mesas_dropbox_url)
+    if res.status_code != 200:
+        raise IOError("Mesas file in Dropbox cannot be read")
+    return [json.loads(i) for i in res.content.splitlines()]
+
+
+def read_from_file_test():
+    with open("mesas_test.jl", "r") as handle:
+        return [json.loads(i) for i in handle.readlines()]
 
 
 class QuakerSpider(scrapy.Spider):
@@ -14,56 +27,36 @@ class QuakerSpider(scrapy.Spider):
     base_url = 'https://resultadoselecciones2016.onpe.gob.pe/PRP2V2016/ajax.php'
     start_url = 'https://resultadoselecciones2016.onpe.gob.pe/PRP2V2016/'
 
+    def __init__(self, mesas_dropbox_url, *args, **kwargs):
+        super(QuakerSpider, self).__init__(*args, **kwargs)
+        if not mesas_dropbox_url:
+            raise Exception("Use dropbox URL as spider argument.")
+        self.all_ubigeos = read_from_file(mesas_dropbox_url)
+
     def start_requests(self):
         yield Request(url=self.start_url,
                       headers={'X-Requested-With': 'XMLHttpRequest'},
                       callback=self.get_mesas)
 
     def get_mesas(self, response):
-        with open("mesas.jl", "r") as handle:
-            ubigeos = [json.loads(i) for i in handle.readlines()]
-        for i in ubigeos:
-            ubigeo = i['mesa']
-            local_code = i['local_code']
+        for i in self.all_ubigeos:
             yield FormRequest(url=self.base_url,
                            headers={'X-Requested-With': 'XMLHttpRequest'},
                            formdata={
-                               '_clase': 'actas',
-                               '_accion': 'displayActas',
+                               '_clase': 'mesas',
+                               '_accion': 'displayMesas',
+                               'ubigeo': i['district_code'],
+                               'nroMesa': i['mesa'],
                                'tipoElec': '10',
-                               'ubigeo': ubigeo,
-                               'actasPor': local_code,
-                               'ubigeoLocal': ubigeo,
-                               'page': 'undefined',
+                               'page': '1',
+                               'pornumero': '1',
                            },
-                           meta={'ubigeo': ubigeo},
+                           meta={'mesa_metadata': i},
                            callback=self.parse)
 
     def parse(self, response):
-        ubigeo = response.meta['ubigeo']
-
-        filename = "ubigeo_" + ubigeo + '.html'
-        with open(filename, 'wb') as f:
-            f.write(response.body)
-
-        tables = response.xpath('//td/a/text()').extract()
-        for table in tables:
-            yield FormRequest(url=self.base_url,
-                            headers={'X-Requested-With': 'XMLHttpRequest'},
-                            formdata={
-                                '_clase': 'mesas',
-                                '_accion':'displayMesas',
-                                'ubigeo': ubigeo,
-                                'nroMesa': table,
-                                'tipoElec': '10',
-                                'page': '1',
-                                'pornumero': '1',
-                            },
-                            meta={'mesa': table},
-                            callback=self.parse_mesa)
-
-    def parse_mesa(self, response):
-        filename = "mesa_" + response.meta['mesa'] + '.html'
+        meta = response.meta['mesa_metadata']
+        filename = "mesa_" + meta['mesa'] + '.html'
         with open(filename, 'wb') as f:
             f.write(response.body)
 
@@ -71,9 +64,9 @@ class QuakerSpider(scrapy.Spider):
         ubigeo = response.xpath("//table[@class='table14']//tr[2]//td").extract()
         ubigeo = [remove_tags(i) for i in ubigeo]
         item['content_results'] = response.xpath("//div[@class='contenido-resultados']").extract_first()
-        item['department'] = ubigeo[0]
-        item['province'] = ubigeo[1]
-        item['district'] = ubigeo[2]
+        item['department'] = meta['department_name']
+        item['province'] = meta['province_name']
+        item['district'] = meta['district_name']
         item['local'] = ubigeo[3]
         item['address'] = ubigeo[4]
 
@@ -96,6 +89,6 @@ class QuakerSpider(scrapy.Spider):
         item['copy_number'] = response.xpath('//table[@class="table13"]//td/text()').extract()[1].strip()
         href = response.xpath('//a/@href').extract_first()
         item['acta_image_url'] = "{}/{}".format(self.start_url, href)
-        filename = "acta_mesa_" + item['table_number'] + '.pdf'
-        urlretrieve(item['acta_image_url'], filename)
+        # filename = "acta_mesa_" + item['table_number'] + '.pdf'
+        # urlretrieve(item['acta_image_url'], filename)
         return item
